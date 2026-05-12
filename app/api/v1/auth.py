@@ -38,14 +38,12 @@ async def register(
 
 @router.post("/login", response_model=Token)
 async def login(
-    username_or_email: str = Form(..., alias="username"),
+    username: str = Form(..., description="Email or Username"),
     password: str = Form(...),
     db: AsyncSession = Depends(get_db),
 ):
     # Allow logging in with either email or username
-    stmt = select(User).where(
-        (User.email == username_or_email) | (User.username == username_or_email)
-    )
+    stmt = select(User).where((User.email == username) | (User.username == username))
     result = await db.execute(stmt)
     user = result.scalar_one_or_none()
     if not user or not verify_password(password, user.hashed_password):

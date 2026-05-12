@@ -12,10 +12,10 @@ async def read_current_user(current_user: User = Depends(get_current_user)):
     return current_user
 
 
-@router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/me")
 async def delete_current_user(
     current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
 ):
     await db.delete(current_user)
     await db.commit()
-    return None
+    return {"message": "User deleted successfully"}
