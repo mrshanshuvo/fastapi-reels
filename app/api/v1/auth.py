@@ -38,12 +38,14 @@ async def register(
 
 @router.post("/login", response_model=Token)
 async def login(
-    username: str = Form(...),
+    username_or_email: str = Form(...),
     password: str = Form(...),
     db: AsyncSession = Depends(get_db),
 ):
-    # Using email to login (OAuth2 expects 'username' field, so we pass email there)
-    stmt = select(User).where(User.email == username)
+    # Allow logging in with either email or username
+    stmt = select(User).where(
+        (User.email == username_or_email) | (User.username == username_or_email)
+    )
     result = await db.execute(stmt)
     user = result.scalar_one_or_none()
     if not user or not verify_password(password, user.hashed_password):
