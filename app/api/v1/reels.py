@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Form
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.dependencies import get_current_user, get_db
 from app.models.user import User
@@ -24,22 +24,23 @@ async def get_upload_authorization(current_user: User = Depends(get_current_user
 
 @router.post("/", response_model=ReelOut, status_code=status.HTTP_201_CREATED)
 async def create_reel(
-    reel_in: ReelCreate,
+    title: str = Form(...),
+    description: str = Form(""),
+    video_url: str = Form(...),
+    thumbnail_url: str = Form(...),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """
-    Placeholder — full implementation requires ImageKit webhook verification.
-    For now, creates a reel record. Video URL would come from ImageKit callback.
+    Creates a new reel record with provided video and thumbnail URLs.
     """
-    # In real flow, video_url and thumbnail_url come from ImageKit after upload
     reel = Reel(
         user_id=current_user.id,
-        title=reel_in.title,
-        description=reel_in.description,
-        video_url="",  # Placeholder — will be filled by ImageKit webhook
-        thumbnail_url="",  # Placeholder — will be filled by ImageKit webhook
-        is_published=False,
+        title=title,
+        description=description,
+        video_url=video_url,
+        thumbnail_url=thumbnail_url,
+        is_published=True,
     )
     db.add(reel)
     await db.commit()

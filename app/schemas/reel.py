@@ -1,15 +1,18 @@
+import uuid
+from datetime import datetime
 from pydantic import BaseModel
-from typing import Optional
 
 
 class ReelCreate(BaseModel):
     title: str
     description: str = ""
+    video_url: str
+    thumbnail_url: str
 
 
 class ReelOut(BaseModel):
-    id: str
-    user_id: str
+    id: uuid.UUID
+    user_id: uuid.UUID
     title: str
     description: str
     video_url: str
@@ -20,7 +23,7 @@ class ReelOut(BaseModel):
     comments_count: int
     shares_count: int
     is_published: bool
-    created_at: str
+    created_at: datetime
 
     class Config:
         from_attributes = True
