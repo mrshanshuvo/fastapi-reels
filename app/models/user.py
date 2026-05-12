@@ -3,6 +3,7 @@ from datetime import datetime
 from sqlalchemy import String, Integer, DateTime
 from sqlalchemy.orm import Mapped, mapped_column
 from app.db.base import Base
+from sqlalchemy.orm import relationship
 
 
 class User(Base):
@@ -21,3 +22,5 @@ class User(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.utcnow, nullable=False
     )
+
+    reels = relationship("Reel", back_populates="user", cascade="all, delete-orphan")
