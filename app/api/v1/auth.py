@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Form
+from fastapi.security import OAuth2PasswordRequestForm
+from pydantic import EmailStr
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.api.dependencies import get_db
@@ -11,11 +13,14 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 
 @router.post("/register", response_model=UserOut, status_code=status.HTTP_201_CREATED)
-async def register(user_in: UserCreate, db: AsyncSession = Depends(get_db)):
+async def register(
+    username: str = Form(...),
+    email: EmailStr = Form(...),
+    password: str = Form(...),
+    db: AsyncSession = Depends(get_db),
+):
     # Check if username or email exists
-    stmt = select(User).where(
-        (User.username == user_in.username) | (User.email == user_in.email)
-    )
+    stmt = select(User).where((User.username == username) | (User.email == email))
     result = await db.execute(stmt)
     existing_user = result.scalar_one_or_none()
     if existing_user:
@@ -23,10 +28,8 @@ async def register(user_in: UserCreate, db: AsyncSession = Depends(get_db)):
             status_code=400, detail="Username or email already registered"
         )
 
-    hashed_pw = get_password_hash(user_in.password)
-    user = User(
-        username=user_in.username, email=user_in.email, hashed_password=hashed_pw
-    )
+    hashed_pw = get_password_hash(password)
+    user = User(username=username, email=email, hashed_password=hashed_pw)
     db.add(user)
     await db.commit()
     await db.refresh(user)
@@ -34,12 +37,16 @@ async def register(user_in: UserCreate, db: AsyncSession = Depends(get_db)):
 
 
 @router.post("/login", response_model=Token)
-async def login(user_in: UserCreate, db: AsyncSession = Depends(get_db)):
-    # Using email to login
-    stmt = select(User).where(User.email == user_in.email)
+async def login(
+    username: str = Form(...),
+    password: str = Form(...),
+    db: AsyncSession = Depends(get_db),
+):
+    # Using email to login (OAuth2 expects 'username' field, so we pass email there)
+    stmt = select(User).where(User.email == username)
     result = await db.execute(stmt)
     user = result.scalar_one_or_none()
-    if not user or not verify_password(user_in.password, user.hashed_password):
+    if not user or not verify_password(password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
     access_token = create_access_token(data={"sub": user.username})
